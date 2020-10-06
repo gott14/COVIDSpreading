@@ -1,0 +1,174 @@
+import java.util.ArrayList;
+import java.util.Random;
+/**
+ * Write a description of class Person here.
+ *
+ * @author (your name)
+ * @version (a version number or a date)
+ */
+public class Person
+{
+    private final static double ADH_DEVIATION = 0.25; //default st dev for adherence distribution
+    private final static double MOR_DEVIATION = 0.1; //default st dev for mortality distribution
+    private final static double AVG_ADH = 0.5; //average amount of adherence to rules
+    private final static double AVG_INF = 14.0; //average days infected
+    private final static double DEV_INF = 1.0; //st dev of days infected
+    private final static double AVG_LAG = 3.0; //avg days between infection and contagious
+    private final static double DEV_LAG = 0.2; //stdev of lag
+    private final static double AVG_T_P = 0.75/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
+    private final static double DEV_T_P = 1.0; //st dev of transmission rate for primary contact
+    private final static double AVG_T_S = 0.1/AVG_INF; //avg daily transmission rate for 2ndary contact
+    private final static double DEV_T_S = 1.0; //st dev of transmission rate of 2ndary contact
+    private boolean infected; 
+    private boolean contagious;
+    private double eventPropensity;
+    private double adherence; //between 0 and 1, 1 being full adherence to state policy, also representing propensity to go to events
+    private double mortality; //mortality*avg mortality = this person's mortality
+    private ArrayList<Contact> primary; //primary contacts
+    private ArrayList<Contact> secondary; //secondary contacts
+    private int lag; //days until the person is contagious, -1 if not infected
+    private int daysInfected; //0 if not infected; if infected, days until not infected
+    /** 
+     * Initialize instance variables:
+     * willingness to social distance--how much govt policy affects their edge weights
+     * infection status
+     * mortality risk
+     */
+    public Person()
+    {
+        infected = false;
+        Random rand = new Random();
+        primary = new ArrayList<Contact>();
+        secondary = new ArrayList<Contact>();
+        daysInfected = 0;
+        lag = -1;
+        do
+        {
+           adherence = rand.nextGaussian()*ADH_DEVIATION + AVG_ADH;
+        } while(adherence < 0.0 || adherence > 1.0);
+        eventPropensity = generateEventPropensity();
+        do
+        {
+           mortality = rand.nextGaussian()*MOR_DEVIATION + 1;
+        } while(mortality < 0.0);
+    }
+    
+    /**
+     * Takes a contact from the State constructor and adds the contact to the list
+     */
+    public void addPrimary(Person person)
+    {
+        Random rand = new Random();
+        double transmission;
+        do
+        {
+        transmission = rand.nextGaussian()*DEV_T_P + AVG_T_P;
+        } while(transmission > 1.0 || transmission < 0.0);
+        primary.add(new Contact(this, person, transmission));
+    }
+    
+    public void addSecondary(Person person)
+    {
+        Random rand = new Random();
+        double transmission;
+        do
+        {
+            transmission = rand.nextGaussian()*DEV_T_S + AVG_T_S;
+        } while(transmission > 1.0 || transmission < 0.0);
+        secondary.add(new Contact(this, person, transmission));
+    }
+    
+    public ArrayList<Contact> getPrimary()
+    {
+        return primary;
+    }
+    
+    public ArrayList<Contact> getSecondary()
+    {
+        return secondary;
+    }
+    
+    public void infect()
+     {
+        if(!infected)
+        {
+        infected = true;
+        Random rand = new Random();
+        do
+        {
+            daysInfected = (int) (rand.nextGaussian()*DEV_INF + AVG_INF);
+        } while(daysInfected < 0);
+        do
+        {
+            lag = (int) (rand.nextGaussian()*DEV_LAG + AVG_LAG);
+        } while (lag <= 0);
+        }
+     }
+    
+    public boolean isInfected()
+    {
+        return infected;
+    }
+    
+    public boolean isContagious()
+    {
+        return contagious;
+    }
+    
+    public static double getTransmissionRate()
+    {
+        return AVG_T_S;
+    }
+    
+    private double generateEventPropensity()
+    {
+       Random rand = new Random();
+       return rand.nextGaussian() * ADH_DEVIATION + (1.0/adherence);
+    }
+    
+    public double getEventPropensity()
+    {
+        return eventPropensity;
+    }
+    
+    public void advance()
+    {
+        if(infected)
+        {
+            daysInfected--;
+            if(lag > 0)
+                lag--;
+            if(lag == 0)
+                contagious  = true;
+        }
+        if(daysInfected == 0)
+        {
+            infected = false;
+            contagious = false;
+            lag = -1;
+        }
+        Random rand = new Random();
+        if(contagious) //still
+        {
+            for(int i = 0; i < primary.size(); i++)
+            {
+                double num = rand.nextDouble();
+                if(num < primary.get(i).getTransmission())
+                {
+                    primary.get(i).getOther(this).infect();
+                }
+            }
+            for(int i = 0; i < secondary.size(); i++)
+            {
+                double num = rand.nextDouble();
+                if(num < secondary.get(i).getTransmission())
+                {
+                    secondary.get(i).getOther(this).infect();
+                }
+            }
+        }
+        
+        eventPropensity = generateEventPropensity(); //need to add way to modify if they know they are infected
+        
+    }
+}
