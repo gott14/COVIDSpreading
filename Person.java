@@ -1,12 +1,13 @@
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.*;
 /**
  * Write a description of class Person here.
  *
  * @author (your name)
  * @version (a version number or a date)
  */
-public class Person
+public class Person implements Comparator<Person>
 {
     private final static double ADH_DEVIATION = 0.25; //default st dev for adherence distribution
     private final static double MOR_DEVIATION = 0.1; //default st dev for mortality distribution
@@ -51,6 +52,18 @@ public class Person
         {
            mortality = rand.nextGaussian()*MOR_DEVIATION + 1;
         } while(mortality < 0.0);
+    }
+    /**
+     * Compares by current event propensity.  Returns 1 if a is larger, -1 if b is larger, and 0 if equal
+     * Explicit comparisons used to ensure there are no errors with double precision being compared to 0.
+     */
+    public int compare(Person a, Person b)
+    {
+        if(a.eventPropensity > b.eventPropensity)
+            return 1;
+        else if(a.eventPropensity < b.eventPropensity)
+            return -1;
+        return 0;
     }
     
     /**
@@ -172,3 +185,4 @@ public class Person
         
     }
 }
+
