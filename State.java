@@ -129,14 +129,17 @@ public class State
         return ctr;
     }
     
-    public HashSet<Person> groupEvent(int size)
+    public HashSet<Person> groupEvent(int size) //need to test
     {
         HashSet<Person> lst = new HashSet<Person>();
-        ArrayList<Person> ordered = orderByEventPropensity(people);
-        while(lst.size() < size)
+        ArrayList<Person> ordered = orderByEventPropensity(people); //reverse of what we want
+        int i = ordered.size() - 1;
+        while(lst.size() < size && i >= 0)
         {
-            
+            lst.add(ordered.get(i));
+            i--;
         }
+        return lst;
     }
     
     private ArrayList<Person> orderByEventPropensity(Hashtable<Integer, Person> original)
@@ -147,8 +150,8 @@ public class State
         {
             lst.add(iter.next());
         }
-        
-        
+        Collections.sort(lst, new Person()); //sorts it in ascending order
+        return lst;
     }
     
     public void executeEvent(HashSet<Person> peopleList, double intensity)
