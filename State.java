@@ -76,6 +76,11 @@ public class State
        }
     }
     
+    public Hashtable<Integer, Person> getPeople()
+    {
+        return people;
+    }
+    
     /**
      * Some nodes with higher IDs may end up with more than their random number of secondary contacts, but it will
      * still be from a random process overall.
@@ -154,10 +159,11 @@ public class State
         return lst;
     }
     
-    public void executeEvent(HashSet<Person> peopleList, double intensity)
+    public void executeEvent(int size, double intensity) //intensity is multiplier on regular transmission rate
     {
         Random rand = new Random();
         double n;
+        HashSet<Person> peopleList = groupEvent(size);
         Iterator<Person> iter1 = peopleList.iterator();
         Iterator<Person> iter2 = peopleList.iterator();
         while(iter1.hasNext()) 
