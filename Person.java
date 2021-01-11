@@ -18,7 +18,8 @@ public class Person implements Comparator<Person>
     private final static double DEV_LAG = 0.2; //stdev of lag
     private final static double AVG_T_P = 0.75/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
     private final static double DEV_T_P = 1.0; //st dev of transmission rate for primary contact
-    private final static double AVG_T_S = 0.1/AVG_INF; //avg daily transmission rate for 2ndary contact
+    private static double AVG_T_S = 0.1/AVG_INF; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod). not final
+                                            //because it can be affected by a mask mandate
     private final static double DEV_T_S = 1.0; //st dev of transmission rate of 2ndary contact
     private boolean infected; 
     private boolean contagious;
@@ -29,6 +30,13 @@ public class Person implements Comparator<Person>
     private ArrayList<Contact> secondary; //secondary contacts
     private int lag; //days until the person is contagious, -1 if not infected
     private int daysInfected; //0 if not infected; if infected, days until not infected
+    private boolean aware; //true if the person knows they have covid
+    private int daysTillResults; //days until test results.  -1 if not waiting on results
+    
+    private static double TESTING_FREQ = 0.01; //percentage of asymptiomatic people who get tested on any given day of their having covid
+    private static double TESTING_LAG = 3.0; //average days to get test result
+    private static double T_LAG_DEV = 0.2; //st dev for time to get test results
+    private static double ASYMP = 0.5; //percentage that are asymptomatic and won't get tested
     /** 
      * Initialize instance variables:
      * willingness to social distance--how much govt policy affects their edge weights
@@ -38,11 +46,13 @@ public class Person implements Comparator<Person>
     public Person()
     {
         infected = false;
+        aware = false;
         Random rand = new Random();
         primary = new ArrayList<Contact>();
         secondary = new ArrayList<Contact>();
         daysInfected = 0;
         lag = -1;
+        daysTillResults = -1;
         do
         {
            adherence = rand.nextGaussian()*ADH_DEVIATION + AVG_ADH;
@@ -103,10 +113,10 @@ public class Person implements Comparator<Person>
     
     public void infect()
      {
+        Random rand = new Random();
         if(!infected)
         {
         infected = true;
-        Random rand = new Random();
         do
         {
             daysInfected = (int) (rand.nextGaussian()*DEV_INF + AVG_INF);
@@ -115,8 +125,14 @@ public class Person implements Comparator<Person>
         {
             lag = (int) (rand.nextGaussian()*DEV_LAG + AVG_LAG);
         } while (lag <= 0);
+        
+        if(rand.nextDouble() >= ASYMP)
+        {
+            aware = true;
         }
-     }
+       }
+       }
+     
     
     public boolean isInfected()
     {
@@ -144,8 +160,19 @@ public class Person implements Comparator<Person>
         return eventPropensity;
     }
     
+    public void implementMaskMandate(double maskEff)
+    {
+        AVG_T_S = AVG_T_S * (1 - (maskEff * adherence));
+    }
+    
+    public void undoMaskMandate(double maskEff)
+    {
+        AVG_T_S = AVG_T_S / (1 - (maskEff * adherence));
+    }
+    
     public void advance()
     {
+        Random rand = new Random();
         if(infected)
         {
             daysInfected--;
@@ -153,15 +180,25 @@ public class Person implements Comparator<Person>
                 lag--;
             if(lag == 0)
                 contagious  = true;
+            if(daysTillResults > 0)
+                daysTillResults--;
+            if(daysTillResults == 0)
+                aware = true;
+            if(rand.nextDouble() < TESTING_FREQ && daysTillResults < 0)
+            {
+                daysTillResults = (int) (rand.nextGaussian() * T_LAG_DEV + TESTING_LAG);
+            }   
         }
         if(daysInfected == 0)
         {
             infected = false;
             contagious = false;
             lag = -1;
+            daysTillResults = -1;
+            aware = false;
         }
-        Random rand = new Random();
-        if(contagious) //still
+
+        if(contagious && !aware)
         {
             for(int i = 0; i < primary.size(); i++)
             {
@@ -183,6 +220,8 @@ public class Person implements Comparator<Person>
         
         eventPropensity = generateEventPropensity(); //need to add way to modify if they know they are infected
         
+        if(aware)
+            eventPropensity = 0;
     }
 }
 
