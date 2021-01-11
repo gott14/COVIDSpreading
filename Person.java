@@ -31,12 +31,16 @@ public class Person implements Comparator<Person>
     private int lag; //days until the person is contagious, -1 if not infected
     private int daysInfected; //0 if not infected; if infected, days until not infected
     private boolean aware; //true if the person knows they have covid
+    private boolean symptoms; //true if they will be symptomatic 
+    private int symptomLag; //days between contagious and symptoms, -1 if asymptomatic
+    private static double SYMP_LAG = 3.0; //average days between contagious and symptoms, if symptomatic case
+    private static double SYMP_LAG_DEV = 1.0; //st dev of the above
     private int daysTillResults; //days until test results.  -1 if not waiting on results
     
     private static double TESTING_FREQ = 0.01; //percentage of asymptiomatic people who get tested on any given day of their having covid
     private static double TESTING_LAG = 3.0; //average days to get test result
     private static double T_LAG_DEV = 0.2; //st dev for time to get test results
-    private static double ASYMP = 0.5; //percentage that are asymptomatic and won't get tested
+    private static double ASYMP = 0.4; //percentage that are asymptomatic and won't get tested
     /** 
      * Initialize instance variables:
      * willingness to social distance--how much govt policy affects their edge weights
@@ -53,6 +57,7 @@ public class Person implements Comparator<Person>
         daysInfected = 0;
         lag = -1;
         daysTillResults = -1;
+        symptomLag = -1;
         do
         {
            adherence = rand.nextGaussian()*ADH_DEVIATION + AVG_ADH;
@@ -128,7 +133,9 @@ public class Person implements Comparator<Person>
         
         if(rand.nextDouble() >= ASYMP)
         {
-            aware = true;
+            symptoms = true;
+            do {
+            symptomLag = (int) (rand.nextGaussian()*SYMP_LAG + SYMP_LAG_DEV); }  while(symptomLag < 0);
         }
        }
        }
@@ -184,17 +191,24 @@ public class Person implements Comparator<Person>
                 daysTillResults--;
             if(daysTillResults == 0)
                 aware = true;
+            if(symptomLag > 0 && symptoms)
+                symptomLag--;
+            if(symptomLag == 0 && symptoms)
+                aware = true;
             if(rand.nextDouble() < TESTING_FREQ && daysTillResults < 0)
             {
-                daysTillResults = (int) (rand.nextGaussian() * T_LAG_DEV + TESTING_LAG);
+                do {
+                daysTillResults = (int) (rand.nextGaussian() * T_LAG_DEV + TESTING_LAG); }  while(daysTillResults < 0);
             }   
         }
         if(daysInfected == 0)
         {
             infected = false;
             contagious = false;
+            symptoms = false;
             lag = -1;
             daysTillResults = -1;
+            symptomLag = -1;
             aware = false;
         }
 
