@@ -18,6 +18,8 @@ public class State
      public Hashtable<Integer, Person> people; //maps ID to person, just public for testing purposes
      private int population;
      private int dayCounter;
+     private boolean maskMandate;
+     private final static double MASK_EFF = 0.8; //transmission reduction with mask
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -44,6 +46,7 @@ public class State
         people = new Hashtable<Integer, Person>();
         generatePrimaryContacts();
         generateSecondaryContacts();
+        maskMandate = false;
     }
     
      /**
@@ -159,7 +162,8 @@ public class State
         return lst;
     }
     
-    public void executeEvent(int size, double intensity) //intensity is multiplier on regular transmission rate
+    public void executeEvent(int size, double intensity) //intensity is multiplier on regular transmission rate. baseline is
+                                                         //secondary contact transmission rate
     {
         Random rand = new Random();
         double n;
@@ -187,4 +191,29 @@ public class State
             }
         }
     } 
+    
+    public void maskMandate() //only affects infectiousness, not mortality (simplification probably).  also only affects 2ndary contacts and events
+    {
+        if(!maskMandate)
+        {
+            maskMandate = true;
+            for(int i = 0; i < population; i++)
+            {
+                people.get(i).implementMaskMandate(MASK_EFF);
+            }
+        }
+    }
+    
+    public void repealMaskMandate()
+    {
+        if(maskMandate)
+        {
+            maskMandate = false;
+            for(int i = 0; i < population; i++)
+            {
+                people.get(i).undoMaskMandate(MASK_EFF);
+            }
+        }
+    }
+    
 }
