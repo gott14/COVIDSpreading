@@ -16,10 +16,11 @@ public class Person implements Comparator<Person>
     private final static double DEV_INF = 1.0; //st dev of days infected
     private final static double AVG_LAG = 3.0; //avg days between infection and contagious
     private final static double DEV_LAG = 0.2; //stdev of lag
-    private final static double AVG_T_P = 0.75/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
+    private final static double AVG_T_P = 0.85/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
     private final static double DEV_T_P = 1.0; //st dev of transmission rate for primary contact
-    private static double AVG_T_S = 0.1/AVG_INF; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod). not final
-                                            //because it can be affected by a mask mandate
+    private static double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
+                                            //someone you interact with at an event). not final because it can be affected by a mask mandate
+                                            //baseline rate for events, can be higher with higher intensity (or lower)
     private final static double DEV_T_S = 1.0; //st dev of transmission rate of 2ndary contact
     private boolean infected; 
     private boolean contagious;
@@ -27,14 +28,13 @@ public class Person implements Comparator<Person>
     private double adherence; //between 0 and 1, 1 being full adherence to state policy, also representing propensity to go to events
     private double mortality; //mortality*avg mortality = this person's mortality
     private ArrayList<Contact> primary; //primary contacts
-    private ArrayList<Contact> secondary; //secondary contacts
     private int lag; //days until the person is contagious, -1 if not infected
     private int daysInfected; //0 if not infected; if infected, days until not infected
     private boolean aware; //true if the person knows they have covid
     private boolean symptoms; //true if they will be symptomatic 
     private int symptomLag; //days between contagious and symptoms, -1 if asymptomatic
-    private static double SYMP_LAG = 3.0; //average days between contagious and symptoms, if symptomatic case
-    private static double SYMP_LAG_DEV = 1.0; //st dev of the above
+    private static double SYMP_LAG = 4.0; //average days between contagious and symptoms, if symptomatic case
+    private static double SYMP_LAG_DEV = 0.5; //st dev of the above
     private int daysTillResults; //days until test results.  -1 if not waiting on results
     
     private static double TESTING_FREQ = 0.01; //percentage of asymptiomatic people who get tested on any given day of their having covid
@@ -53,7 +53,6 @@ public class Person implements Comparator<Person>
         aware = false;
         Random rand = new Random();
         primary = new ArrayList<Contact>();
-        secondary = new ArrayList<Contact>();
         daysInfected = 0;
         lag = -1;
         daysTillResults = -1;
@@ -95,25 +94,9 @@ public class Person implements Comparator<Person>
         primary.add(new Contact(this, person, transmission));
     }
     
-    public void addSecondary(Person person)
-    {
-        Random rand = new Random();
-        double transmission;
-        do
-        {
-            transmission = rand.nextGaussian()*DEV_T_S + AVG_T_S;
-        } while(transmission > 1.0 || transmission < 0.0);
-        secondary.add(new Contact(this, person, transmission));
-    }
-    
     public ArrayList<Contact> getPrimary()
     {
         return primary;
-    }
-    
-    public ArrayList<Contact> getSecondary()
-    {
-        return secondary;
     }
     
     public void infect()
@@ -220,14 +203,6 @@ public class Person implements Comparator<Person>
                 if(num < primary.get(i).getTransmission())
                 {
                     primary.get(i).getOther(this).infect();
-                }
-            }
-            for(int i = 0; i < secondary.size(); i++)
-            {
-                double num = rand.nextDouble();
-                if(num < secondary.get(i).getTransmission())
-                {
-                    secondary.get(i).getOther(this).infect();
                 }
             }
         }
