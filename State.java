@@ -13,13 +13,11 @@ public class State
 {
      private final static double AVG_POD_SIZE = 5.0; //average number of primary contacts per person
      private final static double POD_DEV = 1.0; //st dev of pod sizes
-     private final static double AVG_S_CONTACTS = 50.0; //average number of secondary contacts per person
-     private final static double SEC_DEV = 5.0; //st dev of secondary contacts
      public Hashtable<Integer, Person> people; //maps ID to person, just public for testing purposes
      private int population;
      private int dayCounter;
      private boolean maskMandate;
-     private final static double MASK_EFF = 0.8; //transmission reduction with mask
+     private final static double MASK_EFF = 0.6; //transmission reduction with mask
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -45,7 +43,6 @@ public class State
         dayCounter = 0;
         people = new Hashtable<Integer, Person>();
         generatePrimaryContacts();
-        generateSecondaryContacts();
         maskMandate = false;
     }
     
@@ -84,38 +81,7 @@ public class State
         return people;
     }
     
-    /**
-     * Some nodes with higher IDs may end up with more than their random number of secondary contacts, but it will
-     * still be from a random process overall.
-     */
-    public void generateSecondaryContacts() 
-    {
-        for(int i = 0; i < this.population; i++)
-        {
-            Person p = people.get(i);
-            int secSize;
-            Random rand = new Random();
-            do
-            {
-                secSize = (int) (rand.nextGaussian()*SEC_DEV + AVG_S_CONTACTS);
-            } while(secSize < 0);
-            
-            while(p.getSecondary().size() < secSize)
-            {
-                int index;
-                do
-                {
-                    index = rand.nextInt(population);
-                } while(index != i); //makes sure its not the chosen person themselves
-                Person x = people.get(index);
-                p.addSecondary(x);
-                x.addSecondary(p);
-            }
-            
-        }
-    }
-    
-    public void advanceDay()
+    public void advanceDay() //takes 15 sec/day with population = one million
     {
         for(int i = 0; i < people.size(); i++)
         {
