@@ -11,17 +11,18 @@ public class Person implements Comparator<Person>
 {
     private final static double ADH_DEVIATION = 0.25; //default st dev for adherence distribution
     private final static double MOR_DEVIATION = 0.1; //default st dev for mortality distribution
-    private final static double AVG_ADH = 0.5; //average amount of adherence to rules
+    private final static double AVG_ADH = 0.75; //average amount of adherence to rules
     private final static double AVG_INF = 14.0; //average days infected
     private final static double DEV_INF = 1.0; //st dev of days infected
     private final static double AVG_LAG = 3.0; //avg days between infection and contagious
     private final static double DEV_LAG = 0.2; //stdev of lag
     private final static double AVG_T_P = 0.85/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
     private final static double DEV_T_P = 1.0; //st dev of transmission rate for primary contact
-    private double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
+    private static double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
                                             //someone you interact with at an event). not final because it can be affected by a mask mandate
                                             //baseline rate for events, can be higher with higher intensity (or lower)
     private final static double DEV_T_S = 1.0; //st dev of transmission rate of 2ndary contact
+    private double transmission; //how easily this person sheds virus to secondary contacts
     private boolean infected; 
     private boolean contagious;
     private double eventPropensity;
@@ -33,7 +34,7 @@ public class Person implements Comparator<Person>
     private boolean aware; //true if the person knows they have covid
     private boolean symptoms; //true if they will be symptomatic 
     private int symptomLag; //days between contagious and symptoms, -1 if asymptomatic
-    private static double SYMP_LAG = 4.0; //average days between contagious and symptoms, if symptomatic case
+    private static double SYMP_LAG = 3.0; //average days between contagious and symptoms, if symptomatic case
     private static double SYMP_LAG_DEV = 0.5; //st dev of the above
     private int daysTillResults; //days until test results.  -1 if not waiting on results
     
@@ -66,6 +67,10 @@ public class Person implements Comparator<Person>
         {
            mortality = rand.nextGaussian()*MOR_DEVIATION + 1;
         } while(mortality < 0.0);
+        do
+        {
+            transmission = rand.nextGaussian()*DEV_T_S + AVG_T_S;
+        } while(transmission < 0.0 || transmission >= 1.0);
     }
     /**
      * Compares by current event propensity.  Returns 1 if a is larger, -1 if b is larger, and 0 if equal
@@ -136,7 +141,7 @@ public class Person implements Comparator<Person>
     
     public double getTransmissionRate()
     {
-        return AVG_T_S;
+        return transmission;
     }
     
     private double generateEventPropensity()
