@@ -18,7 +18,7 @@ public class Person implements Comparator<Person>
     private final static double DEV_LAG = 0.2; //stdev of lag
     private final static double AVG_T_P = 0.85/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
     private final static double DEV_T_P = 1.0; //st dev of transmission rate for primary contact
-    private static double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
+    private double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
                                             //someone you interact with at an event). not final because it can be affected by a mask mandate
                                             //baseline rate for events, can be higher with higher intensity (or lower)
     private final static double DEV_T_S = 1.0; //st dev of transmission rate of 2ndary contact
@@ -134,7 +134,7 @@ public class Person implements Comparator<Person>
         return contagious;
     }
     
-    public static double getTransmissionRate()
+    public double getTransmissionRate()
     {
         return AVG_T_S;
     }
