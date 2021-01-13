@@ -135,23 +135,24 @@ public class State
         double n;
         HashSet<Person> peopleList = groupEvent(size);
         Iterator<Person> iter1 = peopleList.iterator();
-        Iterator<Person> iter2 = peopleList.iterator();
         while(iter1.hasNext()) 
         {
             Person p1 = iter1.next();
+            Iterator<Person> iter2 = peopleList.iterator();
             while(iter2.hasNext())
             {
                 Person p2 = iter2.next();
-                if(p1.isContagious())
+                if(p1.isContagious() && !p2.isInfected())
                 {
                     n = rand.nextDouble();
-                    if(n < Person.getTransmissionRate() * intensity)
+                    if(n < p1.getTransmissionRate() * intensity)
                         p2.infect();
                 }
-                if(p2.isContagious())
+                if(p2.isContagious() && !p1.isInfected())
                 {
                     n = rand.nextDouble();
-                    if(n < Person.getTransmissionRate() * intensity)
+                    double t = p1.getTransmissionRate();
+                    if(n < p1.getTransmissionRate() * intensity)
                         p1.infect();
                 }
             }
