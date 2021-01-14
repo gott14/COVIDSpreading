@@ -9,7 +9,7 @@ import java.util.*;
  */
 public class Person implements Comparator<Person>
 {
-    private final static double ADH_DEVIATION = 0.25; //default st dev for adherence distribution
+    private final static double ADH_DEVIATION = 0.05; //default st dev for adherence distribution
     private final static double MOR_DEVIATION = 0.1; //default st dev for mortality distribution
     private final static double AVG_ADH = 0.75; //average amount of adherence to rules
     private final static double AVG_INF = 14.0; //average days infected
@@ -17,11 +17,11 @@ public class Person implements Comparator<Person>
     private final static double AVG_LAG = 3.0; //avg days between infection and contagious
     private final static double DEV_LAG = 0.2; //stdev of lag
     private final static double AVG_T_P = 0.85/AVG_INF; //avg daily transmission rate for primary contact - based on cruise ship study
-    private final static double DEV_T_P = 1.0; //st dev of transmission rate for primary contact
+    private final static double DEV_T_P = 0.05; //st dev of transmission rate for primary contact
     private static double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
                                             //someone you interact with at an event). not final because it can be affected by a mask mandate
                                             //baseline rate for events, can be higher with higher intensity (or lower)
-    private final static double DEV_T_S = 1.0; //st dev of transmission rate of 2ndary contact
+    private final static double DEV_T_S = 0.05; //st dev of transmission rate of 2ndary contact
     private double transmission; //how easily this person sheds virus to secondary contacts
     private boolean infected; 
     private boolean contagious;
@@ -30,7 +30,7 @@ public class Person implements Comparator<Person>
     private double mortality; //mortality*avg mortality = this person's mortality
     private ArrayList<Contact> primary; //primary contacts
     private int lag; //days until the person is contagious, -1 if not infected
-    private int daysInfected; //0 if not infected; if infected, days until not infected
+    private int daysInfected; //-1 if not infected; if infected, days until not infected
     private boolean aware; //true if the person knows they have covid
     private boolean symptoms; //true if they will be symptomatic 
     private int symptomLag; //days between contagious and symptoms, -1 if asymptomatic
@@ -42,6 +42,10 @@ public class Person implements Comparator<Person>
     private static double TESTING_LAG = 3.0; //average days to get test result
     private static double T_LAG_DEV = 0.2; //st dev for time to get test results
     private static double ASYMP = 0.4; //percentage that are asymptomatic and won't get tested
+    
+    private final static int IMMUNITY_LEN = 120; //days of immunity from covid
+    private int immunity_ctr; //countdown to when immunity is over.  -1 when N/A
+    private boolean immune; //can't spread or get covid
     /** 
      * Initialize instance variables:
      * willingness to social distance--how much govt policy affects their edge weights
@@ -54,10 +58,12 @@ public class Person implements Comparator<Person>
         aware = false;
         Random rand = new Random();
         primary = new ArrayList<Contact>();
-        daysInfected = 0;
+        daysInfected = -1;
         lag = -1;
         daysTillResults = -1;
         symptomLag = -1;
+        immunity_ctr = -1;
+        immune = false;
         do
         {
            adherence = rand.nextGaussian()*ADH_DEVIATION + AVG_ADH;
@@ -107,7 +113,7 @@ public class Person implements Comparator<Person>
     public void infect()
      {
         Random rand = new Random();
-        if(!infected)
+        if(!infected && !immune)
         {
         infected = true;
         do
@@ -139,9 +145,17 @@ public class Person implements Comparator<Person>
         return contagious;
     }
     
+    public boolean isImmune()
+    {
+        return immune;
+    }
+    
     public double getTransmissionRate()
     {
-        return transmission;
+        if(!immune)
+            return transmission;
+        else
+            return 0.0;
     }
     
     private double generateEventPropensity()
@@ -157,12 +171,12 @@ public class Person implements Comparator<Person>
     
     public void implementMaskMandate(double maskEff)
     {
-        AVG_T_S = AVG_T_S * (1 - (maskEff * adherence));
+        transmission = transmission * (1 - (maskEff * adherence));
     }
     
     public void undoMaskMandate(double maskEff)
     {
-        AVG_T_S = AVG_T_S / (1 - (maskEff * adherence));
+        transmission = transmission / (1 - (maskEff * adherence));
     }
     
     public void advance()
@@ -189,8 +203,19 @@ public class Person implements Comparator<Person>
                 daysTillResults = (int) (rand.nextGaussian() * T_LAG_DEV + TESTING_LAG); }  while(daysTillResults < 0);
             }   
         }
+        else
+        {
+            if(immunity_ctr == 0)
+            {
+                immunity_ctr = -1;
+                immune = false;
+            }
+            if(immunity_ctr != -1)
+                immunity_ctr--;
+        }
         if(daysInfected == 0)
         {
+            daysInfected = -1;
             infected = false;
             contagious = false;
             symptoms = false;
@@ -198,6 +223,8 @@ public class Person implements Comparator<Person>
             daysTillResults = -1;
             symptomLag = -1;
             aware = false;
+            immunity_ctr = IMMUNITY_LEN;
+            immune = true;
         }
 
         if(contagious && !aware)
