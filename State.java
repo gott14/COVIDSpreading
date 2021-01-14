@@ -17,7 +17,7 @@ public class State
      private int population;
      private int dayCounter;
      private boolean maskMandate;
-     private final static double MASK_EFF = 0.6; //transmission reduction with mask
+     private final double MASK_EFF = 0.65; //transmission reduction with mask
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -151,8 +151,7 @@ public class State
                 if(p2.isContagious() && !p1.isInfected())
                 {
                     n = rand.nextDouble();
-                    double t = p1.getTransmissionRate();
-                    if(n < p1.getTransmissionRate() * intensity)
+                    if(n < p2.getTransmissionRate() * intensity)
                         p1.infect();
                 }
             }
@@ -164,7 +163,7 @@ public class State
         if(!maskMandate)
         {
             maskMandate = true;
-            for(int i = 0; i < population; i++)
+            for(int i = 0; i < people.size(); i++)
             {
                 people.get(i).implementMaskMandate(MASK_EFF);
             }
