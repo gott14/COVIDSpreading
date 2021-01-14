@@ -46,6 +46,10 @@ public class Person implements Comparator<Person>
     private final static int IMMUNITY_LEN = 120; //days of immunity from covid
     private int immunity_ctr; //countdown to when immunity is over.  -1 when N/A
     private boolean immune; //can't spread or get covid
+    
+    private final static int VACCINE_LAG = 14; //days until vaccine takes effect
+    private final static int VACCINE_IMM_LEN = 365; //how long immunity lasts from a vaccine
+    private int vaccine_ctr; //days until vaccine takes effect, -1 if N/A
     /** 
      * Initialize instance variables:
      * willingness to social distance--how much govt policy affects their edge weights
@@ -64,6 +68,7 @@ public class Person implements Comparator<Person>
         symptomLag = -1;
         immunity_ctr = -1;
         immune = false;
+        vaccine_ctr = -1;
         do
         {
            adherence = rand.nextGaussian()*ADH_DEVIATION + AVG_ADH;
@@ -150,6 +155,12 @@ public class Person implements Comparator<Person>
         return immune;
     }
     
+    public void vaccinate()
+    {
+        if(!infected)
+            vaccine_ctr = VACCINE_LAG;
+    }
+    
     public double getTransmissionRate()
     {
         if(!immune)
@@ -226,7 +237,17 @@ public class Person implements Comparator<Person>
             immunity_ctr = IMMUNITY_LEN;
             immune = true;
         }
-
+        
+        if(vaccine_ctr != -1)
+        {
+            vaccine_ctr--;
+        }
+        if(vaccine_ctr == 0)
+        {
+            vaccine_ctr = -1;
+            immunity_ctr = VACCINE_IMM_LEN;
+        }
+        
         if(contagious && !aware)
         {
             for(int i = 0; i < primary.size(); i++)
