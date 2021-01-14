@@ -29,7 +29,10 @@ public class Contact
     }
     public double getTransmission()
     {
-        return transmission;
+        if(!a.isImmune() && !b.isImmune())
+            return transmission;
+        else
+            return 0.0;
     }
     public Person getOther(Person p) //not entirely sure on this
     {
