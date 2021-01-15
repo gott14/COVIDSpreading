@@ -13,11 +13,13 @@ public class State
 {
      private final static double AVG_POD_SIZE = 5.0; //average number of primary contacts per person
      private final static double POD_DEV = 1.0; //st dev of pod sizes
-     public Hashtable<Integer, Person> people; //maps ID to person, just public for testing purposes
+     private HashSet<Person> people; //maps ID to person, just public for testing purposes
      private int population;
      private int dayCounter;
      private boolean maskMandate;
      private final double MASK_EFF = 0.65; //transmission reduction with mask
+     private int deaths;
+     private int totalCases;
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -41,21 +43,22 @@ public class State
     {
         population = pop;
         dayCounter = 0;
-        people = new Hashtable<Integer, Person>();
+        people = new HashSet<Person>();
         generatePrimaryContacts();
         maskMandate = false;
+        deaths = 0;
     }
     
      /**
-     * Maybe abstract out the create of the population? right now the primary contacts have to be generated before
-     * the secondary contacts
+     * 
+     * 
      */
     public void generatePrimaryContacts()
     {
        int count = 0;
        while(count < this.population)
        {
-           Person p = new Person();
+           Person p = new Person(this);
            int podSize; 
            Random rand = new Random();
            do
@@ -63,29 +66,31 @@ public class State
                podSize = (int) (rand.nextGaussian()*POD_DEV + AVG_POD_SIZE);
            } while(podSize < 0);
 
-           people.put(count, p);
+           people.add(p);
            count++;
            for(int i = 0; i < podSize; i++)
            {
-               Person x = new Person();
+               Person x = new Person(this);
                p.addPrimary(x);
                x.addPrimary(p);
-               people.put(count, x);
+               people.add(x);
                count++;
            }
        }
+       population = people.size();
     }
     
-    public Hashtable<Integer, Person> getPeople()
+    public HashSet<Person> getPeople()
     {
         return people;
     }
     
     public void advanceDay() //takes 15 sec/day with population = one million
     {
-        for(int i = 0; i < people.size(); i++)
+        Iterator<Person> itr = people.iterator();
+        while(itr.hasNext())
         {
-            Person p = people.get(i);
+            Person p = itr.next();
             p.advance();
             
         }
@@ -95,12 +100,34 @@ public class State
     public int numInfected() //maybe preprocess this list as an instance variable?
     {
         int ctr = 0;
-        for(int i = 0; i < people.size(); i++)
+        Iterator<Person> itr = people.iterator();
+        while(itr.hasNext())
         {
-            if(people.get(i).isInfected())
+            if(itr.next().isInfected())
                 ctr++;  
         }
         return ctr;
+    }
+    
+    public void updateDeaths()
+    {
+        deaths++;
+        population--;
+    }
+    
+    public int numDeaths()
+    {
+        return deaths;
+    }
+    
+    public void updateCases()
+    {
+        totalCases++;
+    }
+    
+    public int numTotalCases()
+    {
+        return totalCases;
     }
     
     public HashSet<Person> groupEvent(int size) //need to test
@@ -116,15 +143,15 @@ public class State
         return lst;
     }
     
-    private ArrayList<Person> orderByEventPropensity(Hashtable<Integer, Person> original)
+    private ArrayList<Person> orderByEventPropensity(HashSet<Person> original)
     {
-        Iterator<Person> iter = original.values().iterator();
+        Iterator<Person> iter = original.iterator();
         ArrayList<Person> lst = new ArrayList<Person>();
         while(iter.hasNext())
         {
             lst.add(iter.next());
         }
-        Collections.sort(lst, new Person()); //sorts it in ascending order
+        Collections.sort(lst, new Person(this)); //sorts it in ascending order
         return lst;
     }
     
@@ -145,14 +172,16 @@ public class State
                 if(p1.isContagious() && !p2.isInfected())
                 {
                     n = rand.nextDouble();
-                    if(n < p1.getTransmissionRate() * intensity)
-                        p2.infect();
+                    double t = p1.getTransmissionRate() * intensity;
+                    if(n < t)
+                        p2.infect((t-n) / n);
                 }
                 if(p2.isContagious() && !p1.isInfected())
                 {
                     n = rand.nextDouble();
-                    if(n < p2.getTransmissionRate() * intensity)
-                        p1.infect();
+                    double t = p2.getTransmissionRate() * intensity;
+                    if(n < t)
+                        p1.infect((t-n) / n);
                 }
             }
         }
@@ -163,9 +192,10 @@ public class State
         if(!maskMandate)
         {
             maskMandate = true;
-            for(int i = 0; i < people.size(); i++)
+            Iterator<Person> itr = people.iterator();
+            while(itr.hasNext())
             {
-                people.get(i).implementMaskMandate(MASK_EFF);
+                itr.next().implementMaskMandate(MASK_EFF);
             }
         }
     }
@@ -175,11 +205,12 @@ public class State
         if(maskMandate)
         {
             maskMandate = false;
-            for(int i = 0; i < population; i++)
+            Iterator<Person> itr = people.iterator();
+            while(itr.hasNext())
             {
-                people.get(i).undoMaskMandate(MASK_EFF);
+                itr.next().undoMaskMandate(MASK_EFF);
             }
         }
     }
-    
+     
 }
