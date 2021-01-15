@@ -9,8 +9,11 @@ import java.util.*;
  */
 public class Person implements Comparator<Person>
 {
+    private State state;
+    
     private final static double ADH_DEVIATION = 0.05; //default st dev for adherence distribution
-    private final static double MOR_DEVIATION = 0.1; //default st dev for mortality distribution
+    private final static double MOR_DEVIATION = 0.04; //default st dev for mortality distribution
+    private final static double AVG_MOR = 0.02; //mortality rate
     private final static double AVG_ADH = 0.75; //average amount of adherence to rules
     private final static double AVG_INF = 14.0; //average days infected
     private final static double DEV_INF = 1.0; //st dev of days infected
@@ -27,7 +30,7 @@ public class Person implements Comparator<Person>
     private boolean contagious;
     private double eventPropensity;
     private double adherence; //between 0 and 1, 1 being full adherence to state policy, also representing propensity to go to events
-    private double mortality; //mortality*avg mortality = this person's mortality
+    private double mortality; //person's mortality rate/probability given average severity
     private ArrayList<Contact> primary; //primary contacts
     private int lag; //days until the person is contagious, -1 if not infected
     private int daysInfected; //-1 if not infected; if infected, days until not infected
@@ -50,13 +53,16 @@ public class Person implements Comparator<Person>
     private final static int VACCINE_LAG = 14; //days until vaccine takes effect
     private final static int VACCINE_IMM_LEN = 365; //how long immunity lasts from a vaccine
     private int vaccine_ctr; //days until vaccine takes effect, -1 if N/A
+    
+    private double severity_index; //how severe the illness is.  closer to 0 is less severe. Max value of 1.  value of -1.0 when N/A
+    private boolean alive;
     /** 
      * Initialize instance variables:
      * willingness to social distance--how much govt policy affects their edge weights
      * infection status
      * mortality risk
      */
-    public Person()
+    public Person(State st)
     {
         infected = false;
         aware = false;
@@ -69,6 +75,9 @@ public class Person implements Comparator<Person>
         immunity_ctr = -1;
         immune = false;
         vaccine_ctr = -1;
+        severity_index = -1.0;
+        state = st;
+        alive = true;
         do
         {
            adherence = rand.nextGaussian()*ADH_DEVIATION + AVG_ADH;
@@ -76,7 +85,7 @@ public class Person implements Comparator<Person>
         eventPropensity = generateEventPropensity();
         do
         {
-           mortality = rand.nextGaussian()*MOR_DEVIATION + 1;
+           mortality = rand.nextGaussian()*MOR_DEVIATION + AVG_MOR;
         } while(mortality < 0.0);
         do
         {
@@ -115,11 +124,13 @@ public class Person implements Comparator<Person>
         return primary;
     }
     
-    public void infect()
+    public void infect(double sev)
      {
         Random rand = new Random();
-        if(!infected && !immune)
+        severity_index = sev;
+        if(!infected && !immune && alive)
         {
+        state.updateCases();
         infected = true;
         do
         {
@@ -130,7 +141,7 @@ public class Person implements Comparator<Person>
             lag = (int) (rand.nextGaussian()*DEV_LAG + AVG_LAG);
         } while (lag <= 0);
         
-        if(rand.nextDouble() >= ASYMP)
+        if(rand.nextDouble() <= (1-ASYMP)*(sev / 0.5)) //avg sev value is 0.5
         {
             symptoms = true;
             do {
@@ -139,6 +150,16 @@ public class Person implements Comparator<Person>
        }
        }
      
+    public void die()
+    {
+        alive = false;
+        for(int i = 0; i < primary.size(); i++)
+        {
+            Person c = primary.get(i).getOther(this);
+            c.getPrimary().remove(this);
+        }
+        state.updateDeaths();
+    }
     
     public boolean isInfected()
     {
@@ -153,6 +174,11 @@ public class Person implements Comparator<Person>
     public boolean isImmune()
     {
         return immune;
+    }
+    
+    public boolean isAlive()
+    {
+        return alive;
     }
     
     public void vaccinate()
@@ -193,6 +219,8 @@ public class Person implements Comparator<Person>
     public void advance()
     {
         Random rand = new Random();
+        if(alive)
+        {
         if(infected)
         {
             daysInfected--;
@@ -226,6 +254,11 @@ public class Person implements Comparator<Person>
         }
         if(daysInfected == 0)
         {
+            Random r = new Random();
+            if(r.nextDouble() < mortality * (severity_index / 0.5))
+            {
+                die();
+            }            
             daysInfected = -1;
             infected = false;
             contagious = false;
@@ -236,6 +269,7 @@ public class Person implements Comparator<Person>
             aware = false;
             immunity_ctr = IMMUNITY_LEN;
             immune = true;
+            
         }
         
         if(vaccine_ctr != -1)
@@ -248,14 +282,15 @@ public class Person implements Comparator<Person>
             immunity_ctr = VACCINE_IMM_LEN;
         }
         
-        if(contagious && !aware)
+        if(contagious && !aware && alive)
         {
             for(int i = 0; i < primary.size(); i++)
             {
                 double num = rand.nextDouble();
-                if(num < primary.get(i).getTransmission())
+                double t = primary.get(i).getTransmission();
+                if(num < t)
                 {
-                    primary.get(i).getOther(this).infect();
+                    primary.get(i).getOther(this).infect((t-num) / t);
                 }
             }
         }
@@ -264,6 +299,7 @@ public class Person implements Comparator<Person>
         
         if(aware)
             eventPropensity = 0;
+        }
     }
 }
 
