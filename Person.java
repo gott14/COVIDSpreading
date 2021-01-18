@@ -195,10 +195,17 @@ public class Person implements Comparator<Person>
             return 0.0;
     }
     
-    private double generateEventPropensity()
+    public double generateEventPropensity()
     {
+       if(aware)
+       {
+           return 0;
+       }
+       else
+       {
        Random rand = new Random();
        return rand.nextGaussian() * ADH_DEVIATION + (1.0/adherence);
+       }
     }
     
     public double getEventPropensity()
@@ -295,10 +302,6 @@ public class Person implements Comparator<Person>
             }
         }
         
-        eventPropensity = generateEventPropensity(); //need to add way to modify if they know they are infected
-        
-        if(aware)
-            eventPropensity = 0;
         }
     }
 }
