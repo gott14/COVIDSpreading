@@ -155,9 +155,19 @@ public class State
         return lst;
     }
     
+    public void shuffleEventPropensity()
+    {
+        Iterator<Person> iter = people.iterator();
+        while(iter.hasNext())
+        {
+            iter.next().generateEventPropensity();
+        }
+    }
+    
     public void executeEvent(int size, double intensity) //intensity is multiplier on regular transmission rate. baseline is
                                                          //secondary contact transmission rate
     {
+        shuffleEventPropensity();
         Random rand = new Random();
         double n;
         HashSet<Person> peopleList = groupEvent(size);
@@ -213,4 +223,8 @@ public class State
         }
     }
      
+    public int getPopulation()
+    {
+        return population;
+    }
 }
