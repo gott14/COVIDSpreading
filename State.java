@@ -207,7 +207,7 @@ public class State
         }
         return peopleList.size(); //returns the actual size of the event so that future events can dynamically
                                   //change expected size based on actual attendance, since max size pretty much
-                                  //serves as expected size too, factoring into expected danger
+                                  //serves as expected size too, factoring into expected danger.
     } 
     
     public void maskMandate() //only affects infectiousness, not mortality (simplification probably).  also only affects 2ndary contacts and events
