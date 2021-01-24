@@ -3,6 +3,7 @@ import java.util.Hashtable;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.*;
+import java.lang.Math;
 /**
  * Write a description of class State here.
  *
@@ -20,6 +21,7 @@ public class State
      private final double MASK_EFF = 0.65; //transmission reduction with mask
      private int deaths;
      private int totalCases;
+     private static double PERCEIVED_IFR = 0.1; //perceived infection rate
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -130,13 +132,17 @@ public class State
         return totalCases;
     }
     
-    public HashSet<Person> groupEvent(int size) //need to test
+    public HashSet<Person> groupEvent(int size, double danger) 
     {
         HashSet<Person> lst = new HashSet<Person>();
         ArrayList<Person> ordered = orderByEventPropensity(people); //reverse of what we want
         int i = ordered.size() - 1;
+        double maxAdh = (100 - (10 * (Math.log(danger * 100)))) / 100;
+        double minPropensity = 1/maxAdh; //no propensity higher than this will attend event
         while(lst.size() < size && i >= 0)
         {
+            if(ordered.get(i).getEventPropensity() < minPropensity)
+                break;
             lst.add(ordered.get(i));
             i--;
         }
@@ -164,13 +170,17 @@ public class State
         }
     }
     
-    public void executeEvent(int size, double intensity) //intensity is multiplier on regular transmission rate. baseline is
+    public int executeEvent(int maxSize, double intensity) //intensity is multiplier on regular transmission rate. baseline is
                                                          //secondary contact transmission rate
     {
         shuffleEventPropensity();
         Random rand = new Random();
         double n;
-        HashSet<Person> peopleList = groupEvent(size);
+        double r = Person.getAvgTransmission() * intensity;
+        if(maskMandate)
+            r = r * MASK_EFF;
+        double danger = 1 - Math.pow(1-r,PERCEIVED_IFR * maxSize); //perceivced chance of getting covid at this event
+        HashSet<Person> peopleList = groupEvent(maxSize, danger);
         Iterator<Person> iter1 = peopleList.iterator();
         while(iter1.hasNext()) 
         {
@@ -195,6 +205,9 @@ public class State
                 }
             }
         }
+        return peopleList.size(); //returns the actual size of the event so that future events can dynamically
+                                  //change expected size based on actual attendance, since max size pretty much
+                                  //serves as expected size too, factoring into expected danger
     } 
     
     public void maskMandate() //only affects infectiousness, not mortality (simplification probably).  also only affects 2ndary contacts and events

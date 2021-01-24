@@ -12,9 +12,9 @@ public class Person implements Comparator<Person>
     private State state;
     
     private final static double ADH_DEVIATION = 0.05; //default st dev for adherence distribution
-    private final static double MOR_DEVIATION = 0.04; //default st dev for mortality distribution
-    private final static double AVG_MOR = 0.02; //mortality rate
-    private final static double AVG_ADH = 0.75; //average amount of adherence to rules
+    private final static double MOR_DEVIATION = 0.002; //default st dev for mortality distribution
+    private final static double AVG_MOR = 0.01; //mortality rate
+    private final static double AVG_ADH = 0.45; //average amount of adherence to rules
     private final static double AVG_INF = 14.0; //average days infected
     private final static double DEV_INF = 1.0; //st dev of days infected
     private final static double AVG_LAG = 3.0; //avg days between infection and contagious
@@ -206,6 +206,11 @@ public class Person implements Comparator<Person>
        Random rand = new Random();
        return rand.nextGaussian() * ADH_DEVIATION + (1.0/adherence);
        }
+    }
+    
+    public static double getAvgTransmission()
+    {
+        return AVG_T_S;
     }
     
     public double getEventPropensity()

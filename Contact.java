@@ -10,7 +10,7 @@ public class Contact
     private Person a;
     private Person b;
     private double transmission;
-
+    
     /**
      * Constructor for objects of class Contact
      */
