@@ -21,7 +21,7 @@ public class State
      private final double MASK_EFF = 0.65; //transmission reduction with mask
      private int deaths;
      private int totalCases;
-     private static double PERCEIVED_IFR = 0.1; //perceived infection rate
+     private static double PERCEIVED_IFR = 0.01; //perceived infection rate
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -179,7 +179,7 @@ public class State
         double r = Person.getAvgTransmission() * intensity;
         if(maskMandate)
             r = r * MASK_EFF;
-        double danger = PERCEIVED_IFR * (1 - Math.pow(1-r,maxSize)); //perceived chance of getting covid at this event
+        double danger = (1 - Math.pow(1-(r*PERCEIVED_IFR),maxSize - 1)); //perceived chance of getting covid at this event
         HashSet<Person> peopleList = groupEvent(maxSize, danger);
         Iterator<Person> iter1 = peopleList.iterator();
         while(iter1.hasNext()) 
