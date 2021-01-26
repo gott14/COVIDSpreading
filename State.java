@@ -179,7 +179,7 @@ public class State
         double r = Person.getAvgTransmission() * intensity;
         if(maskMandate)
             r = r * MASK_EFF;
-        double danger = 1 - Math.pow(1-r,PERCEIVED_IFR * maxSize); //perceivced chance of getting covid at this event
+        double danger = PERCEIVED_IFR * (1 - Math.pow(1-r,maxSize)); //perceived chance of getting covid at this event
         HashSet<Person> peopleList = groupEvent(maxSize, danger);
         Iterator<Person> iter1 = peopleList.iterator();
         while(iter1.hasNext()) 
