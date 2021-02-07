@@ -236,6 +236,15 @@ public class State
         }
     }
      
+    public void adjustAllAdherences(double change)
+    {
+        Iterator<Person> itr = people.iterator();
+        while(itr.hasNext())
+        {
+            itr.next().adjustAdherence(change);
+        }
+    }
+    
     public int getPopulation()
     {
         return population;
