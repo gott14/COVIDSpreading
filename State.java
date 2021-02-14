@@ -132,7 +132,7 @@ public class State
         return totalCases;
     }
     
-    public HashSet<Person> groupEvent(int size, double danger) 
+    public HashSet<Person> groupEvent(int size, double danger, boolean slack) //danger is odds a given person is infected at event
     {
         HashSet<Person> lst = new HashSet<Person>();
         ArrayList<Person> ordered = orderByEventPropensity(people); //reverse of what we want
@@ -141,7 +141,7 @@ public class State
         double minPropensity = 1/maxAdh; //no propensity higher than this will attend event
         while(lst.size() < size && i >= 0)
         {
-            if(ordered.get(i).getEventPropensity() < minPropensity)
+            if(ordered.get(i).getEventPropensity() < minPropensity && slack)
                 break;
             lst.add(ordered.get(i));
             i--;
@@ -170,8 +170,10 @@ public class State
         }
     }
     
-    public int executeEvent(int maxSize, double intensity) //intensity is multiplier on regular transmission rate. baseline is
+    public int executeEvent(int maxSize, double intensity, boolean slack) //intensity is multiplier on regular transmission rate. baseline is
                                                          //secondary contact transmission rate
+                                                         //if slack is true, then event will fill to minPropensity, otherwise
+                                                         ///it will fill to max size
     {
         shuffleEventPropensity();
         Random rand = new Random();
@@ -180,7 +182,7 @@ public class State
         if(maskMandate)
             r = r * MASK_EFF;
         double danger = (1 - Math.pow(1-(r*PERCEIVED_IFR),maxSize - 1)); //perceived chance of getting covid at this event
-        HashSet<Person> peopleList = groupEvent(maxSize, danger);
+        HashSet<Person> peopleList = groupEvent(maxSize, danger, slack);
         Iterator<Person> iter1 = peopleList.iterator();
         while(iter1.hasNext()) 
         {
