@@ -8,12 +8,13 @@
 public class Event
 {
     private int maxSize;
-    private double intensity;
-    
-    public Event(int ms, double i)
+    private double intensity; //multiplier on AVG_T_S
+    private boolean slack;
+    public Event(int ms, double i, boolean s)
     {
         maxSize = ms;
         intensity = i;
+        slack = s;
     }
     
     public int getMaxSize()
@@ -24,5 +25,10 @@ public class Event
     public double getIntensity()
     {
         return intensity;
+    }
+    
+    public boolean allowsSlack()
+    {
+        return slack;
     }
 }
