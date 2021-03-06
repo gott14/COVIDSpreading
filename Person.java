@@ -44,7 +44,7 @@ public class Person implements Comparator<Person>
     private static double TESTING_FREQ = 0.01; //percentage of asymptiomatic people who get tested on any given day of their having covid
     private static double TESTING_LAG = 3.0; //average days to get test result
     private static double T_LAG_DEV = 0.2; //st dev for time to get test results
-    private static double ASYMP = 0.4; //percentage that are asymptomatic and won't get tested
+    private static double ASYMP = 0.99; //percentage that are asymptomatic and won't get tested
     
     private final static int IMMUNITY_LEN = 120; //days of immunity from covid
     private int immunity_ctr; //countdown to when immunity is over.  -1 when N/A
@@ -163,6 +163,11 @@ public class Person implements Comparator<Person>
     public boolean isInfected()
     {
         return infected;
+    }
+    
+    public boolean isAware()
+    {
+        return aware;
     }
     
     public boolean isContagious()
