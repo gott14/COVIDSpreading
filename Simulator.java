@@ -18,17 +18,17 @@ public class Simulator
     private static int EVENT_CAP = 50; //max people at one high risk event
     private static int daysToSim;
     private static final int SETUP_DAYS = 7; //days looked at in setup function
-    private static double quarantineRate = 0.5; //proportion of total infected days where the infected person is quarantined
+    private static double quarantineRate = 0.65; //proportion of total infected days where the infected person is quarantined
     private static int incubation = 3; //used in setup as incubation period
     private static int sicknessLen = 10; //days youre sick with covid (assumption for setup function), starting from infection
-    private static final int DIFFUSAL_FACTOR = 100; //in determineEvents, how many people per event the needed transmission is 
+    private static final int DIFFUSAL_FACTOR = 1000; //in determineEvents, how many people per event the needed transmission is 
                                                    //diffused into.  less people per event --> more events
                                                    //more events -->> higher concentration of cases among low-adherence people
                                                  
     
     private static ArrayList<Event> events = new ArrayList<Event>();
     private ArrayList<Integer> pastCases = new ArrayList<Integer>();
-    private static int POP = 10000; //should input this, days to sim, and maybe mortality through the csv file
+    private static int POP = 100000; //should input this, days to sim, and maybe mortality through the csv file
     private static int EVENTSPERDAY = POP / DIFFUSAL_FACTOR;
     public Simulator(ArrayList<Integer> pastCases, int days)
     {
@@ -36,8 +36,10 @@ public class Simulator
         this.pastCases = pastCases;
         setup();
         this.state = new State(POP); 
-        for(int k = pastCases.size()-1; k >= pastCases.size()-sicknessLen; k--)
+        int n = 0;
+        for(int k = pastCases.size()-sicknessLen; k < pastCases.size(); k++)
         {
+           n += pastCases.get(k);
            state.batchInfect(pastCases.get(k));
            state.advanceDay();
         }
@@ -114,7 +116,7 @@ public class Simulator
             for(int k = 0; k < EVENTSPERDAY; k++)
             {
             Event e = events.get(index);
-            state.executeEvent(e.getMaxSize(), 20.0 * e.getIntensity(), e.allowsSlack());
+            state.executeEvent(e.getMaxSize(), e.getIntensity(), e.allowsSlack());
             index++;
             if(index >= events.size())
                 index = 0;
