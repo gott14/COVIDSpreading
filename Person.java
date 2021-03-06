@@ -11,7 +11,7 @@ public class Person implements Comparator<Person>
 {
     private State state;
     
-    private final static double ADH_DEVIATION = 0.05; //default st dev for adherence distribution
+    private final static double ADH_DEVIATION = 0.2; //default st dev for adherence distribution
     private final static double MOR_DEVIATION = 0.002; //default st dev for mortality distribution
     private final static double AVG_MOR = 0.01; //mortality rate
     private static double AVG_ADH = 0.75; //average amount of adherence to rules
@@ -130,7 +130,6 @@ public class Person implements Comparator<Person>
         severity_index = sev;
         if(!infected && !immune && alive)
         {
-        state.updateCases();
         infected = true;
         do
         {
@@ -213,6 +212,16 @@ public class Person implements Comparator<Person>
         return AVG_T_S;
     }
     
+    public static double getAsymp()
+    {
+        return ASYMP;
+    }
+    
+    public static double getTestingFreq()
+    {
+        return TESTING_FREQ;
+    }
+    
     public double getEventPropensity()
     {
         return eventPropensity;
@@ -244,8 +253,10 @@ public class Person implements Comparator<Person>
             daysInfected--;
             if(lag > 0)
                 lag--;
-            if(lag == 0)
+            if(lag == 0) {
                 contagious  = true;
+                state.updateCases(); 
+                lag = -1;   }
             if(daysTillResults > 0)
                 daysTillResults--;
             if(daysTillResults == 0)
@@ -287,6 +298,7 @@ public class Person implements Comparator<Person>
             aware = false;
             immunity_ctr = IMMUNITY_LEN;
             immune = true;
+            state.decrementCurrentCases();
             
         }
         
