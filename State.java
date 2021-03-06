@@ -96,9 +96,13 @@ public class State
         int ctr = 0;
         while(ctr < num && itr.hasNext())
         {
-            itr.next().infect(0.5);
+            Person p = itr.next();
+            if(!p.isInfected())
+            {
+            p.infect(0.5);
             ctr++;
             dailyCases++;
+            }
         }
     }
     public int advanceDay() //takes 15 sec/day with population = one million
@@ -161,6 +165,31 @@ public class State
         return currentCases;
     }
     
+    public int curAwareCases()
+    {
+        Iterator<Person> itr = people.iterator();
+        int c = 0;
+        while(itr.hasNext())
+        {
+            Person p = itr.next();
+            if(p.isInfected() && p.isAware())
+                c++;
+        }
+        return c;
+    }
+    
+    public int infectedInGroup(HashSet<Person> lst) //gives number of infected ppl in group
+    {
+        Iterator<Person> itr = lst.iterator();
+        int count = 0;
+        while(itr.hasNext())
+        {
+            if(itr.next().isInfected())
+                count++;
+        }
+        return count;
+    }
+    
     public HashSet<Person> groupEvent(int size, double danger, boolean slack) //danger is odds a given person is infected at event
     {
         HashSet<Person> lst = new HashSet<Person>();
@@ -212,6 +241,9 @@ public class State
             r = r * MASK_EFF;
         double danger = (1 - Math.pow(1-(r*PERCEIVED_IFR),maxSize - 1)); //perceived chance of getting covid at this event
         HashSet<Person> peopleList = groupEvent(maxSize, danger, slack);
+        int numInf = infectedInGroup(peopleList);
+        int a = curAwareCases();
+        int newInf = 0;
         Iterator<Person> iter1 = peopleList.iterator();
         while(iter1.hasNext()) 
         {
@@ -224,15 +256,17 @@ public class State
                 {
                     n = rand.nextDouble();
                     double t = p1.getTransmissionRate() * intensity;
-                    if(n < t)
+                    if(n < t) {
                         p2.infect((t-n) / n);
+                        newInf++; }
                 }
                 if(p2.isContagious() && !p1.isInfected())
                 {
                     n = rand.nextDouble();
                     double t = p2.getTransmissionRate() * intensity;
-                    if(n < t)
+                    if(n < t) {
                         p1.infect((t-n) / n);
+                        newInf++; }
                 }
             }
         }
