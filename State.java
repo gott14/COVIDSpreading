@@ -12,7 +12,7 @@ import java.lang.Math;
  */
 public class State
 {
-     private final static double AVG_POD_SIZE = 5.0; //average number of primary contacts per person
+     private final static double AVG_POD_SIZE = 8.0; //average number of primary contacts per person
      private final static double POD_DEV = 1.0; //st dev of pod sizes
      private HashSet<Person> people; //maps ID to person, just public for testing purposes
      private int population;
@@ -22,6 +22,8 @@ public class State
      private int deaths;
      private int totalCases;
      private static double PERCEIVED_IFR = 0.01; //perceived infection rate
+     private int dailyCases;
+     private int currentCases;
      /**
       * First, initialize edges that connect primary contacts(pods) with a default size 
       * around which a random number is generated.  Until all nodes in the set population size
@@ -49,6 +51,7 @@ public class State
         generatePrimaryContacts();
         maskMandate = false;
         deaths = 0;
+        dailyCases = 0;
     }
     
      /**
@@ -87,7 +90,18 @@ public class State
         return people;
     }
     
-    public void advanceDay() //takes 15 sec/day with population = one million
+    public void batchInfect(int num) //used for initial infections
+    {
+        Iterator<Person> itr = people.iterator();
+        int ctr = 0;
+        while(ctr < num && itr.hasNext())
+        {
+            itr.next().infect(0.5);
+            ctr++;
+            dailyCases++;
+        }
+    }
+    public int advanceDay() //takes 15 sec/day with population = one million
     {
         Iterator<Person> itr = people.iterator();
         while(itr.hasNext())
@@ -97,6 +111,9 @@ public class State
             
         }
         dayCounter++;
+        int temp = dailyCases;
+        dailyCases = 0;
+        return temp;
     }
     
     public int numInfected() //maybe preprocess this list as an instance variable?
@@ -125,11 +142,23 @@ public class State
     public void updateCases()
     {
         totalCases++;
+        dailyCases++;
+        currentCases++;
+    }
+    
+    public void decrementCurrentCases()
+    {
+        currentCases--;
     }
     
     public int numTotalCases()
     {
         return totalCases;
+    }
+    
+    public int getCurrentCases()
+    {
+        return currentCases;
     }
     
     public HashSet<Person> groupEvent(int size, double danger, boolean slack) //danger is odds a given person is infected at event
