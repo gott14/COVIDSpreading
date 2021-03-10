@@ -120,18 +120,6 @@ public class State
         return temp;
     }
     
-    public int numInfected() //maybe preprocess this list as an instance variable?
-    {
-        int ctr = 0;
-        Iterator<Person> itr = people.iterator();
-        while(itr.hasNext())
-        {
-            if(itr.next().isInfected())
-                ctr++;  
-        }
-        return ctr;
-    }
-    
     public void updateDeaths()
     {
         deaths++;
