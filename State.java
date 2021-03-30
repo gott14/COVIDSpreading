@@ -166,13 +166,13 @@ public class State
         return c;
     }
     
-    public int infectedInGroup(HashSet<Person> lst) //gives number of infected ppl in group
+    public int contagiousInGroup(HashSet<Person> lst) //gives number of infected ppl in group
     {
         Iterator<Person> itr = lst.iterator();
         int count = 0;
         while(itr.hasNext())
         {
-            if(itr.next().isInfected())
+            if(itr.next().isContagious())
                 count++;
         }
         return count;
@@ -216,6 +216,25 @@ public class State
         }
     }
     
+    public HashSet<Person> randomGroup(int n)
+    {
+        Iterator<Person> itr = people.iterator();
+        ArrayList<Person> temp = new ArrayList<Person>();
+        while(itr.hasNext())
+            temp.add(itr.next());
+        
+        HashSet<Person> group = new HashSet<Person>();
+        Random r = new Random();
+        while(group.size() < n)
+        {
+            int index = r.nextInt(temp.size());
+            group.add(temp.get(index));
+            temp.remove(index);
+        }
+        
+        return group;
+    }
+    
     public int executeEvent(int maxSize, double intensity, boolean slack) //intensity is multiplier on regular transmission rate. baseline is
                                                          //secondary contact transmission rate
                                                          //if slack is true, then event will fill to minPropensity, otherwise
@@ -228,10 +247,13 @@ public class State
         if(maskMandate)
             r = r * MASK_EFF;
         double danger = (1 - Math.pow(1-(r*PERCEIVED_IFR),maxSize - 1)); //perceived chance of getting covid at this event
-        HashSet<Person> peopleList = groupEvent(maxSize, danger, slack);
-        int numInf = infectedInGroup(peopleList);
-        int a = curAwareCases();
+        //HashSet<Person> peopleList = groupEvent(maxSize, danger, slack);
+        HashSet<Person> peopleList = randomGroup(maxSize);
+        int numCont = contagiousInGroup(peopleList);
         int newInf = 0;
+        if(numCont != 0)
+        {
+        int a = curAwareCases();
         Iterator<Person> iter1 = peopleList.iterator();
         while(iter1.hasNext()) 
         {
@@ -258,9 +280,11 @@ public class State
                 }
             }
         }
+    }
         return peopleList.size(); //returns the actual size of the event so that future events can dynamically
                                   //change expected size based on actual attendance, since max size pretty much
                                   //serves as expected size too, factoring into expected danger.
+         
     } 
     
     public void maskMandate() //only affects infectiousness, not mortality (simplification probably).  also only affects 2ndary contacts and events
