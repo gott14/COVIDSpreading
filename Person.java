@@ -24,7 +24,7 @@ public class Person implements Comparator<Person>
     private static double AVG_T_S = 0.1; //avg daily transmission rate for 2ndary contact (meaning someone not in your pod, but 
                                             //someone you interact with at an event). not final because it can be affected by a mask mandate
                                             //baseline rate for events, can be higher with higher intensity (or lower)
-    private final static double DEV_T_S = 0.05; //st dev of transmission rate of 2ndary contact
+    private final static double DEV_T_S = 0.02; //st dev of transmission rate of 2ndary contact
     private double transmission; //how easily this person sheds virus to secondary contacts
     private boolean infected; 
     private boolean contagious;
@@ -44,7 +44,7 @@ public class Person implements Comparator<Person>
     private static double TESTING_FREQ = 0.01; //percentage of asymptiomatic people who get tested on any given day of their having covid
     private static double TESTING_LAG = 3.0; //average days to get test result
     private static double T_LAG_DEV = 0.2; //st dev for time to get test results
-    private static double ASYMP = 0.99; //percentage that are asymptomatic and won't get tested
+    private static double ASYMP = 0.50; //percentage that are asymptomatic and won't get tested
     
     private final static int IMMUNITY_LEN = 120; //days of immunity from covid
     private int immunity_ctr; //countdown to when immunity is over.  -1 when N/A
@@ -208,7 +208,7 @@ public class Person implements Comparator<Person>
        else
        {
        Random rand = new Random();
-       return rand.nextGaussian() * ADH_DEVIATION + (1.0/adherence);
+       return rand.nextGaussian() * (1.0 / ADH_DEVIATION) + (1.0/adherence);
        }
     }
     
