@@ -12,7 +12,12 @@ df_st = df_st.loc[df_st['admin_region_2'].isnull()]
 
 df_st = df_st.sort_values(by = 'updated', ascending=False)
 
+
 cases = df_st['confirmed_change'].head(30)
+
+pops = pd.read_excel("statepops.xlsx", index_col=0)
+spop = pops[state].iloc[0]
+
 
 filename = "covid_last_30.csv"
 
@@ -20,8 +25,8 @@ with open(filename, 'w') as csvfile:
 	csvwriter = csv.writer(csvfile)
 	for index,value in cases.items():
 		csvwriter.writerow([value])
+	csvwriter.writerow([spop])
 		
-
 
 
 
