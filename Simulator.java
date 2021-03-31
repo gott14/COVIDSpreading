@@ -85,7 +85,8 @@ public class Simulator
     }
     
     /* could definitely add more parameters to vary the features of the events generated.  Fine for now */
-    private void determineEvents(int initCases, int finalCases) //populates inst var with events that would be needed per week to
+    //should add a way so that initial events can be determined given that there is already a mask mandate in place
+    private void determineEvents(int initCases, int finalCases, boolean mask) //populates inst var with events that would be needed per week to
                                                                //cause the given rise in cases
     {
         double effIFR = ((double)initCases) / ((double) POP) * (1.0-quarantineRate); //effective ifr at the start 
@@ -97,7 +98,9 @@ public class Simulator
         double presInf = effIFR * (double)DIFFUSAL_FACTOR; //presumed infected at each event
         //new way to calculate t, seems like it works about the same
         double t = (double)finalCases / (((double)DIFFUSAL_FACTOR - presInf) * presInf * (double)EVENTSPERDAY); 
-        
+        if(mask)
+            t = t / state.getMaskEff(); //if already a mask mandate, adjust t to account for turning on the mandate
+                                        //at the beginning of the sim
         
         for(int i = 0; i < POP / DIFFUSAL_FACTOR; i++)
         {
@@ -115,11 +118,11 @@ public class Simulator
             {
                 cases += pastCases.get(i-j);
             }
-            determineEvents(cases, cases + pastCases.get(i));
+            determineEvents(cases, cases + pastCases.get(i), false);
         }
     }
     
-    public static void run(String filename, int days) throws Exception
+    public static void run(String filename, int days, boolean mask) throws Exception
     {
         Scanner sc = new Scanner(new File(filename)); //most recent are at the top
         sc.useDelimiter(",");
@@ -135,6 +138,8 @@ public class Simulator
         
         int index = 0;
         System.out.println("Starting");
+        if(mask)
+            state.maskMandate();
         for(int i = 0; i < daysToSim; i++)
         {
             double effIFR = ((double)state.getCurrentCases()) / ((double) POP) * (1.0-quarantineRate);
@@ -160,8 +165,8 @@ public class Simulator
     public static void main(String [] args) throws Exception
     {
         String file = args[0];
-        int DAYS = 30;
-        run(file, DAYS);
+        int DAYS = 60;
+        run(file, DAYS, false);
     }
     
 }
