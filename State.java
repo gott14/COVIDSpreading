@@ -313,6 +313,11 @@ public class State
         }
     }
      
+    public double getMaskEff()
+    {
+        return MASK_EFF;
+    }
+    
     public void adjustAllAdherences(double change)
     {
         Iterator<Person> itr = people.iterator();
