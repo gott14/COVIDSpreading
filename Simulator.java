@@ -21,7 +21,7 @@ public class Simulator
     private static double quarantineRate = 0.35; //proportion of total infected days where the infected person is quarantined
     private static int incubation = 3; //used in setup as incubation period
     private static int sicknessLen = 10; //days youre sick with covid (assumption for setup function), starting from infection
-    private static final int DIFFUSAL_FACTOR = 7500; //in determineEvents, how many people per event the needed transmission is 
+    private static final int DIFFUSAL_FACTOR = 750; //in determineEvents, how many people per event the needed transmission is 
                                                    //diffused into.  less people per event --> more events
                                                    //more events -->> higher concentration of cases among low-adherence people
                                                    //program performance is very sensitive with respect to diffusal factor
@@ -30,18 +30,20 @@ public class Simulator
     //more tests should probably be done since this is a very important parameter -->backtest
     private static ArrayList<Event> events = new ArrayList<Event>();
     private ArrayList<Integer> pastCases = new ArrayList<Integer>();
-    private static int POP = 500000; 
+    private static int POP = 50000; 
     //DIFFUSAL_FACTOR should be increased proportionally to POP to maintain similar execution
-    private static int STATEPOP = 1300000; //should input this, days to sim, and maybe mortality through the csv file
-    private static int SCALED_BY = STATEPOP / POP;
+    private static int STATEPOP; //should input this, days to sim, and maybe mortality through the csv file
+    private static int SCALED_BY;
     private static int EVENTSPERDAY = POP / DIFFUSAL_FACTOR;
-    public Simulator(ArrayList<Integer> pastCases, int days)
+    public Simulator(ArrayList<Integer> pastCases, int days, boolean mask, int p)
     {
         daysToSim = days;
         this.pastCases = pastCases;
-        setup();
+        setup(mask);
         this.state = new State(POP); 
         int cases = 0;
+        this.STATEPOP = p;
+        this.SCALED_BY = STATEPOP / POP;
         for(int k = pastCases.size()-sicknessLen; k < pastCases.size(); k++) //make sure this is the correct direction to traverse
         {
            cases += pastCases.get(k);
@@ -99,7 +101,7 @@ public class Simulator
         //new way to calculate t, seems like it works about the same
         double t = (double)finalCases / (((double)DIFFUSAL_FACTOR - presInf) * presInf * (double)EVENTSPERDAY); 
         if(mask)
-            t = t / state.getMaskEff(); //if already a mask mandate, adjust t to account for turning on the mandate
+            t = t / State.getMaskEff(); //if already a mask mandate, adjust t to account for turning on the mandate
                                         //at the beginning of the sim
         
         for(int i = 0; i < POP / DIFFUSAL_FACTOR; i++)
@@ -109,7 +111,7 @@ public class Simulator
         
     }
     
-    public void setup() //list of number of cases in each of past number of days
+    public void setup(boolean mask) //list of number of cases in each of past number of days
     {
         for(int i = pastCases.size() - SETUP_DAYS; i < pastCases.size(); i++)
         {
@@ -118,7 +120,7 @@ public class Simulator
             {
                 cases += pastCases.get(i-j);
             }
-            determineEvents(cases, cases + pastCases.get(i), false);
+            determineEvents(cases, cases + pastCases.get(i), mask);
         }
     }
     
@@ -133,13 +135,16 @@ public class Simulator
             double d = Double.parseDouble(s);
             int i = (int) d;
             cases.add(0, i); //add at beginning
+            
         }
-        Simulator s = new Simulator(cases, days);
+        int p = cases.remove(0); //population is first entry in cases
+        Simulator s = new Simulator(cases, days, mask, p);
         
         int index = 0;
         System.out.println("Starting");
         if(mask)
             state.maskMandate();
+        state.repealMaskMandate();
         for(int i = 0; i < daysToSim; i++)
         {
             double effIFR = ((double)state.getCurrentCases()) / ((double) POP) * (1.0-quarantineRate);
@@ -165,8 +170,8 @@ public class Simulator
     public static void main(String [] args) throws Exception
     {
         String file = args[0];
-        int DAYS = 60;
-        run(file, DAYS, false);
+        int DAYS = 30;
+        run(file, DAYS, true);
     }
     
 }
