@@ -138,13 +138,26 @@ public class Simulator
             
         }
         int p = cases.remove(0); //population is first entry in cases
+        //cases should maybe be smoothed somehow, because some days just administratively
+        //end up with more reported cases --> calculate 7 day averages?
+        //ArrayList<Integer> casesMovingAvg = new ArrayList<Integer>();
+        for(int i = 0; i < cases.size() - 7; i++)
+        {
+            double sum = 0;
+            for(int k = i; k < i + 7; k++)
+            {
+                sum += (double)(cases.get(k));
+            }
+            double avg = sum / 7.0;
+            cases.set(i, (int)(avg));
+        }
         Simulator s = new Simulator(cases, days, mask, p);
         
         int index = 0;
         System.out.println("Starting");
         if(mask)
             state.maskMandate();
-        state.repealMaskMandate();
+        state.maskMandate();
         for(int i = 0; i < daysToSim; i++)
         {
             double effIFR = ((double)state.getCurrentCases()) / ((double) POP) * (1.0-quarantineRate);
@@ -171,7 +184,7 @@ public class Simulator
     {
         String file = args[0];
         int DAYS = 30;
-        run(file, DAYS, true);
+        run(file, DAYS, false);
     }
     
 }
