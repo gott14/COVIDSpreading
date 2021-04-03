@@ -40,6 +40,8 @@ public class Simulator
         daysToSim = days;
         this.pastCases = pastCases;
         setup(mask);
+        this.STATEPOP = p;
+        this.SCALED_BY = STATEPOP / POP;
         this.state = new State(POP); 
         int cases = 0;
         this.STATEPOP = p;
@@ -91,8 +93,8 @@ public class Simulator
     private void determineEvents(int initCases, int finalCases, boolean mask) //populates inst var with events that would be needed per week to
                                                                //cause the given rise in cases
     {
-        double effIFR = ((double)initCases) / ((double) POP) * (1.0-quarantineRate); //effective ifr at the start 
-        double ifrPrime = ((double)finalCases) / ((double)POP); //final ifr
+        double effIFR = ((double)initCases) / ((double) STATEPOP) * (1.0-quarantineRate); //effective ifr at the start 
+        double ifrPrime = ((double)finalCases) / ((double)STATEPOP); //final ifr
         /**double t = 1 - Math.exp((Math.log(1 - ifrPrime)) / (effIFR * DIFFUSAL_FACTOR)); **/ /* transmission rate in order to 
         have pop/diffusal number of events all with the same t-rate in order to get the population to ifrPrime.  Equation
         derivation is in my notes*/
@@ -138,9 +140,7 @@ public class Simulator
             
         }
         int p = cases.remove(0); //population is first entry in cases
-        //cases should maybe be smoothed somehow, because some days just administratively
-        //end up with more reported cases --> calculate 7 day averages?
-        //ArrayList<Integer> casesMovingAvg = new ArrayList<Integer>();
+        //creating 7 day moving averages
         for(int i = 0; i < cases.size() - 7; i++)
         {
             double sum = 0;
@@ -162,7 +162,8 @@ public class Simulator
         {
             double effIFR = ((double)state.getCurrentCases()) / ((double) POP) * (1.0-quarantineRate);
             double predCases = 0;
-            for(int k = 0; k < 1; k++) //if k < EVENTSPERDAY is changed to k < 1, program runs as it should
+            for(int k = 0; k < EVENTSPERDAY; k++) //if k < EVENTSPERDAY is changed to k < 1, program runs as it should
+                                        //this shouldn't be the case, even though it works
             {
             Event e = events.get(index);
             predCases += (effIFR * e.getMaxSize()) * (e.getIntensity() * Person.getAvgTransmission() * e.getMaxSize());
